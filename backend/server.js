@@ -13,11 +13,23 @@ app.use(express.static('frontend'));
 app.use('/zips', express.static('public/zips'));
 
 app.post('/api/chat', async (req, res) => {
-  const prompt = req.body.prompt;
-  const response = await chat.askGPT(prompt);
-  await zip.createZipFromText(response);
-  res.json({ response });
+  try {
+    const prompt = req.body.prompt;
+
+    if (!prompt || prompt.trim() === '') {
+      return res.status(400).json({ error: "Prompt vacío" });
+    }
+
+    const response = await chat.askGPT(prompt);
+    await zip.createZipFromText(response);
+
+    res.json({ response });
+  } catch (err) {
+    console.error("❌ Error en /api/chat:", err.message || err);
+    res.status(500).json({ error: "Error al procesar la solicitud de GPT." });
+  }
 });
+
 
 app.get('/api/download', (req, res) => {
   const file = path.join(__dirname, '../public/zips/generated.zip');
